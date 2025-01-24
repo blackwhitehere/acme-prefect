@@ -6,5 +6,6 @@ if __name__ == "__main__":
         work_pool_name="metaflow-managed-pool",
         image="ghcr.io/blackwhitehere/acme-prefect:latest",
         cron="0 12 * * 1-5",
+        build=False,
         push=False,
     )
