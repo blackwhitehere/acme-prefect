@@ -1,8 +1,11 @@
 # Based on https://github.com/astral-sh/uv-docker-example
-# Using multi-stage image builds to create a final image without uv.
+# Using multi-stage image builds to create a final image without uv and any build tools.
 
 # Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.12-alpine AS builder
+FROM python:3.12 AS builder
+
+# Install anything needed to build the project
+RUN pip install uv
 
 # Install the project into `/app`
 WORKDIR /app
@@ -27,9 +30,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # Then, use a final image without uv
-FROM ghcr.io/astral-sh/uv:python3.12-alpine
+FROM python:3.12
 # It is important to use the image that matches the builder, as the path to the
-# Python executable must be the same, e.g., using `python:3.11-alpine`
+# Python executable must be the same, e.g., using `python:3.11`
 # will fail.
 
 # Copy the application from the builder
