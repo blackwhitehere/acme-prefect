@@ -35,11 +35,11 @@ FROM python:3.12
 # Python executable must be the same, e.g., using `python:3.11`
 # will fail.
 
-# Copy the application from the builder
-COPY --from=builder --chown=app:app /app /app
+# Copy the application from the builder - prefect will expect to see `src` dir in the root directory
+COPY --from=builder --chown=app:app /app /
 
 # Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/.venv/bin:$PATH"
 
 # Run the example command
 CMD ["ap", "--help"]
