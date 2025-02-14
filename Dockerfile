@@ -35,7 +35,9 @@ FROM python:3.12
 # Python executable must be the same, e.g., using `python:3.11`
 # will fail.
 
-# Copy the application from the builder - prefect will expect to see `src` dir in the root directory
+# Copy the application from the builder
+# TODO: prefect expects to see `src` dir in the root directory based on the deployment e.g. `python src/acme_prefect/deploy/fetch_yahoo_data_ecs_fargate.py`
+# check if there is a way to change how it looks up path to the script
 COPY --from=builder --chown=app:app /app /
 
 # Place executables in the environment at the front of the path
