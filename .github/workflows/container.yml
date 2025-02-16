@@ -1,10 +1,22 @@
 name: Build and Push Docker Image
 # Check https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
 
+env:
+  PROJECT_NAME: acme_prefect
+
 on:
   push:
+    # Trigger on push to main branch that modifies the paths as well when specific tag is pushed
+    branches:
+      - main
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "uv.lock"
+      - "pyproject.toml"
     tags:
-      - 'container-release/*'
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -14,27 +26,50 @@ jobs:
       contents: read
 
     steps:
-    # Checkout the repository
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Log in to GitHub Container Registry
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      # Get version from branch name
+      - name: Get package version when run on branch
+        if: startsWith(github.ref, 'refs/heads/')
+        run: |
+          VERSION=${GITHUB_REF#refs/heads/}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version found: $VERSION"
+      
+      # Get version from tag name
+      - name: Get package version when run from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version found: $VERSION"
+      
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-    # Build the Docker image
-    - name: Build Docker image
-      run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/acme-prefect:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    # Push the Docker image to GHCR
-    - name: Push Docker image
-      run: |
-        IMAGE_TAG=${GITHUB_REF#refs/tags/container-release/}
-        docker tag ghcr.io/${{ github.repository_owner }}/acme-prefect:latest ghcr.io/${{ github.repository_owner }}/acme-prefect:${IMAGE_TAG}
-        docker push ghcr.io/${{ github.repository_owner }}/acme-prefect:${IMAGE_TAG}
-        docker push ghcr.io/${{ github.repository_owner }}/acme-prefect:latest
+      - name: Build and push
+        id: build-docker-image
+        env:
+            GITHUB_SHA: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+            VERSION: ${{ env.VERSION }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.PROJECT_NAME }}/
+          push: true
+          tags: ${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-${{ env.GITHUB_SHA }},${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
