@@ -30,22 +30,6 @@ jobs:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Get version from branch name
-      - name: Get branch name as VERSION when run on branch
-        if: startsWith(github.ref, 'refs/heads/')
-        run: |
-          VERSION=${GITHUB_REF#refs/heads/}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Version found: $VERSION"
-      
-      # Get version from tag name
-      - name: Get semantic version as VERSION when run from tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Version found: $VERSION"
       
       - name: Get commit hash
         id: get-commit-hash
@@ -61,7 +45,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      # NOTE: can modify metadata-action to create tags based on the branch name or tag name
+      # NOTE: other tags can be added to the image
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
