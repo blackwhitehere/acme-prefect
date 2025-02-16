@@ -1,5 +1,5 @@
 name: Build and Push Docker Image
-# Check https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
+# Check https://github.com/PrefectHQ/cicd-example-workspaces
 
 env:
   PROJECT_NAME: acme_prefect
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Get version from branch name
-      - name: Get package version when run on branch
+      - name: Get branch name as VERSION when run on branch
         if: startsWith(github.ref, 'refs/heads/')
         run: |
           VERSION=${GITHUB_REF#refs/heads/}
@@ -39,7 +39,7 @@ jobs:
           echo "Version found: $VERSION"
       
       # Get version from tag name
-      - name: Get package version when run from tag
+      - name: Get semantic version as VERSION when run from tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
@@ -53,7 +53,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      # Log in to GitHub Container Registry
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -68,7 +67,7 @@ jobs:
             VERSION: ${{ env.VERSION }}
         uses: docker/build-push-action@v5
         with:
-          context: ${{ env.PROJECT_NAME }}/
+          context: . # context for env.PROJECT_NAME is root dir of the repo, but this can be changed if multiple projects are in the repo
           push: true
           tags: ${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-${{ env.GITHUB_SHA }},${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-latest
           cache-from: type=gha
