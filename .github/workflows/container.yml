@@ -3,6 +3,7 @@ name: Build and Push Docker Image
 
 env:
   PROJECT_NAME: acme_prefect
+  REGISTRY: ghcr.io
 
 on:
   push:
@@ -59,16 +60,17 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
+      
+      # TODO: may use docker/metadata-action to create tags
+      - name: Build & Push Docker image
         id: build-docker-image
         env:
             GITHUB_SHA: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
             VERSION: ${{ env.VERSION }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: . # context for env.PROJECT_NAME is root dir of the repo, but this can be changed if multiple projects are in the repo
           push: true
-          tags: ${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-${{ env.GITHUB_SHA }},${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-latest
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-${{ env.GITHUB_SHA }},${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
