@@ -61,16 +61,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      # TODO: may use docker/metadata-action to create tags
+      # NOTE: can modify metadata-action to create tags based on the branch name or tag name
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+            VERSION: ${{ env.VERSION }}
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}
+          tags: |
+            type=ref,suffix=-latest,event=branch
+            type=ref,suffix=-${{ steps.get-commit-hash.outputs.COMMIT_HASH }},event=branch
+            type=pep440,pattern={{version}},suffix=-${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+      
+      # TODO: verify options and interactions between cache-from/cache-to and layer caching in Dockerfile
       - name: Build & Push Docker image
         id: build-docker-image
-        env:
-            GITHUB_SHA: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
-            VERSION: ${{ env.VERSION }}
         uses: docker/build-push-action@v6
         with:
-          context: . # context for env.PROJECT_NAME is root dir of the repo, but this can be changed if multiple projects are in the repo
+          context: . # context for env.PROJECT_NAME is currently root dir of the repo, but this will change if multiple projects are in the repo
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-${{ env.GITHUB_SHA }},${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:${{ env.VERSION }}-latest
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
