@@ -1,0 +1,23 @@
+name: deploy
+prefect-version: 3.1.14
+
+build: null
+push: null
+pull: null
+
+deployments:
+- name: "{{ $PROJECT_NAME }}-{{ $BRANCH_NAME }}-fetch-yahoo-data-dev"
+  version: "{{ $BRANCH_NAME}}-{{ $COMMIT_HASH }}"
+  tags: [{{ $PROJECT_NAME }}, {{ $BRANCH_NAME }}, {{ $COMMIT_HASH }}]
+  description: "Fetches Yahoo Finance data with minute-level granularity"
+  schedule:
+    cron: "0 12 * * 1-5"
+  flow_name: fetch-yahoo-data
+  entrypoint: src/acme_prefect/flows/fetch_yahoo_data.py:main
+  parameters: {}
+  work_pool:
+    name: ecs-pool # TODO: get from prefect variables?
+    work_queue_name: null
+    job_variables:
+      image: {{ $IMAGE_URI }}
+      env: {{ prefect.blocks.acme_config.acme_prefect-dev-1 }}

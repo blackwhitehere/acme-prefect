@@ -1,0 +1,155 @@
+name: Deploy Prefect flows to DEV for project `acme_prefect`
+
+env:
+  PROJECT_NAME: acme_prefect
+  PREFECT_WORKSPACE: gunerstangmailcom/test-workspace # TODO: hide
+  REGISTRY: ghcr.io
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types:
+      - completed
+  # push:
+  #   branches:
+  #     - main
+  # schedule: # runs on schedule from main branch to limit the number of deployments
+  #   - cron: '0 4 * * *'  # Runs at 4 AM UTC every day
+  workflow_dispatch: # allows manual deployments
+    inputs:
+      flow_name:
+        description: 'Flow name to deploy (default: all flows)'
+        required: false
+        default: 'all'
+        type: string
+
+jobs:
+  deploy-production:
+    name: Deploy to production workspace
+    environment: deploy-prefect
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      
+      # TODO: avoid full project install as just prefect is needed, but need to have the same version as in uv.lock
+      - name: Install project
+        run: uv sync --all-extras --dev
+      
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      
+      - name: Get image name
+        id: set-image-name
+        run: |
+          IMAGE_NAME=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}
+          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+      
+      - name: Get branch name when run on branch
+        if: startsWith(github.ref, 'refs/heads/')
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "Version found: $BRANCH_NAME"
+    
+      - name: Assume branch name when run from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          BRANCH_NAME=main
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "Version found: $BRANCH_NAME"
+      
+      # - name: Docker meta
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   env:
+      #     COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+      #     IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+      #   with:
+      #     images: ${{ env.IMAGE_NAME }}
+      #     tags: |
+      #       type=ref,suffix=-latest,event=branch
+      #       type=ref,suffix=-${{ env.COMMIT_HASH }},event=branch
+      #       type=pep440,pattern={{version}},suffix=-${{ env.COMMIT_HASH }} # human readable version
+   
+      # - name: Set up Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
+
+      # - name: Create Get Image URI Python script
+      #   run: |
+      #     echo '
+      #     import os
+      #     tags = os.environ["TAGS"].split(",")
+      #     image_name = os.environ["IMAGE_NAME"]
+      #     non_latest = [tag for tag in tags if not tag.endswith("-latest")]
+      #     assert len(non_latest) > 0, "No non-latest tags found"
+      #     selected_tag = non_latest[0]
+      #     print(f"IMAGE_URI={image_name}:{selected_tag}")
+      #     ' > select_tag.py
+
+      # - name: Get Image URI
+      #   id: get-image-uri
+      #   env:
+      #     IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+      #     TAGS: ${{ steps.meta.outputs.tags }}
+      #   run: python3 select_tag.py >> "$GITHUB_OUTPUT"
+
+      - name: Get Image URI
+        id: get-image-uri
+        env:
+          IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+        run: |
+          echo "IMAGE_URI=$IMAGE_NAME:$BRANCH_NAME-$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Determine what to deploy
+        id: determine-what-to-deploy
+        run: |
+          if [ -n "${{ github.event.inputs.flow_name }}" ] && [ "${{ github.event.inputs.flow_name }}" != "all" ]; then
+            echo "DEPLOY_PATTERN=${{ github.event.inputs.flow_name }}/*-dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "DEPLOY_PATTERN=*-dev" >> "$GITHUB_OUTPUT"
+          fi
+      
+      - name: Get default version number from acme-config
+        id: get-default-version-number
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+        run: |
+          VERSION_NUMBER=$(ac get-version -app-name $PROJECT_NAME -env dev)
+          echo "VERSION_NUMBER=$VERSION_NUMBER" >> "$GITHUB_OUTPUT"
+      
+      # TODO: move to /admin and run as uv tool with own dependencies
+      - name: Create config block
+        env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.VERSION_NUMBER }}
+        run: uv run python src/$PROJECT_NAME/create_config_block.py --app-name $PROJECT_NAME --env dev --ver-number $VERSION_NUMBER
+
+      - name: Prefect Deploy
+        env:
+          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+          IMAGE_URI: ${{ steps.get-image-uri.outputs.IMAGE_URI }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+          DEPLOY_PATTERN: ${{ steps.determine-what-to-deploy.outputs.DEPLOY_PATTERN }}
+        run: |
+          uv run prefect cloud workspace set -w ${{ env.PREFECT_WORKSPACE }}
+          uv run prefect deploy -n $DEPLOY_PATTERN --prefect-file src/$PROJECT_NAME/prefect.yaml

@@ -7,14 +7,13 @@ env:
 
 on:
   push:
-    # Trigger on push to main branch that modifies the paths as well when specific tag is pushed
     branches:
       - main
-    paths:
-      - "Dockerfile"
-      - ".dockerignore"
-      - "uv.lock"
-      - "pyproject.toml"
+    # paths:
+    #   - "Dockerfile"
+    #   - ".dockerignore"
+    #   - "uv.lock"
+    #   - "pyproject.toml"
     tags:
       - 'v*'
   workflow_dispatch:
@@ -27,7 +26,6 @@ jobs:
       contents: read
 
     steps:
-      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
       
@@ -50,13 +48,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         env:
-            VERSION: ${{ env.VERSION }}
+          COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}
           tags: |
             type=ref,suffix=-latest,event=branch
-            type=ref,suffix=-${{ steps.get-commit-hash.outputs.COMMIT_HASH }},event=branch
-            type=pep440,pattern={{version}},suffix=-${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+            type=ref,suffix=-${{ env.COMMIT_HASH }},event=branch
+            type=pep440,pattern={{version}},suffix=-${{ env.COMMIT_HASH }} # human readable version
       
       # TODO: verify options and interactions between cache-from/cache-to and layer caching in Dockerfile
       - name: Build & Push Docker image
