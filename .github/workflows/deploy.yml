@@ -1,4 +1,4 @@
-name: Deploy Prefect flows to DEV for project `acme_prefect`
+name: Deploy Prefect flows to DEV
 
 env:
   PROJECT_NAME: acme_prefect
@@ -131,12 +131,14 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
         run: |
-          VERSION_NUMBER=$(ac get-version -app-name $PROJECT_NAME -env dev)
+          VERSION_NUMBER=$(uv run ac get-version -app-name $PROJECT_NAME -env dev)
           echo "VERSION_NUMBER=$VERSION_NUMBER" >> "$GITHUB_OUTPUT"
       
       # TODO: move to /admin and run as uv tool with own dependencies
       - name: Create config block
         env:
+          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.VERSION_NUMBER }}
         run: uv run python src/$PROJECT_NAME/create_config_block.py --app-name $PROJECT_NAME --env dev --ver-number $VERSION_NUMBER
