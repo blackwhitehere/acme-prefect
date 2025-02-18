@@ -1,3 +1,37 @@
-# Based on https://github.com/astral-sh/uv-docker-example
-# Exclude the project virtual environment from image builds
-.venv
+# Version control
+.git/
+.gitignore
+.github/
+
+# Python
+__pycache__/
+.Python
+*.py[cod]
+# Python creates .pyc files (compiled bytecode) when running code
+# When a Python file contains a class, it also creates a *.py.class file
+# This pattern ignores those class-specific bytecode files
+*$py.class
+.pytest_cache/
+.coverage
+
+# Development/IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Build/Distribution
+dist/
+build/
+*.egg-info/
+
+# Project specific
+docs/
+*.log
+data/
+logs/
