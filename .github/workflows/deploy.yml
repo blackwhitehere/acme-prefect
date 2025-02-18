@@ -150,6 +150,9 @@ jobs:
           PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.VERSION_NUMBER }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: uv run python src/$PROJECT_NAME/create_config_block.py -app-name $PROJECT_NAME -env dev -ver-number $VERSION_NUMBER
 
       - name: Prefect Deploy
