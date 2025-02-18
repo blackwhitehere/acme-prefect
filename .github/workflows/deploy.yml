@@ -144,6 +144,7 @@ jobs:
           echo "VERSION_NUMBER=$VERSION_NUMBER" >> "$GITHUB_OUTPUT"
       
       # TODO: move to /admin and run as uv tool with own dependencies
+      # TODO: change this script to expect .env file in the same directory and it can be fetched in a step before.
       - name: Create config block
         env:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
