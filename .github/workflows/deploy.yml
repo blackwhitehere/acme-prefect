@@ -150,7 +150,7 @@ jobs:
           PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.VERSION_NUMBER }}
-        run: uv run python src/$PROJECT_NAME/create_config_block.py --app-name $PROJECT_NAME --env dev --ver-number $VERSION_NUMBER
+        run: uv run python src/$PROJECT_NAME/create_config_block.py -app-name $PROJECT_NAME -env dev -ver-number $VERSION_NUMBER
 
       - name: Prefect Deploy
         env:
