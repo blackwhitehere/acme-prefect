@@ -1,19 +1,16 @@
 name: Build and Push Docker Image
 # Check https://github.com/PrefectHQ/cicd-example-workspaces
+# https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-ci-cd
+# https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-via-python
 
 env:
   PROJECT_NAME: acme_prefect
   REGISTRY: ghcr.io
 
 on:
-  push:
+  push: # TODO: add dependence on test.yml?
     branches:
       - main
-    # paths:
-    #   - "Dockerfile"
-    #   - ".dockerignore"
-    #   - "uv.lock"
-    #   - "pyproject.toml"
     tags:
       - 'v*'
   workflow_dispatch:
