@@ -4,7 +4,7 @@ name: Build and Push Docker Image
 # https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-via-python
 
 env:
-  PROJECT_NAME: acme_prefect
+  PROJECT_NAME: acme_prefect # TODO: standardize on - in name of image
   REGISTRY: ghcr.io
 
 on:
