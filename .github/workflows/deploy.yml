@@ -43,7 +43,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       
-      # TODO: avoid full project install as just prefect is needed, but need to have the same version as in uv.lock
+      # TODO: can we avoid full project install and limit the installed dependencies to ones only used in this workflow?
+      # i.e. the deploy dependencies.
       - name: Install project
         run: uv sync --all-extras --dev
       
@@ -71,6 +72,14 @@ jobs:
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           echo "Version found: $BRANCH_NAME"
       
+      ## The below section shows how tag could be selected from tags generated 
+      ## by docker/metadata-action@v5 that is used in the build job.
+      ## However this method repeats the steps of the build job and 
+      ## only uses a heuristic to find the immutable tag. Better way
+      ## would be for build job to publish the single right tag so this workflow can access it,
+      ## but artifacts are only available within the same workflow run.
+      ## TODO: This can perhaps be done with acme-config to publish the tag for the build job and read it from there.
+
       # - name: Docker meta
       #   id: meta
       #   uses: docker/metadata-action@v5
@@ -83,11 +92,6 @@ jobs:
       #       type=ref,suffix=-latest,event=branch
       #       type=ref,suffix=-${{ env.COMMIT_HASH }},event=branch
       #       type=pep440,pattern={{version}},suffix=-${{ env.COMMIT_HASH }} # human readable version
-   
-      # - name: Set up Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
 
       # - name: Create Get Image URI Python script
       #   run: |
@@ -107,7 +111,8 @@ jobs:
       #     IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
       #     TAGS: ${{ steps.meta.outputs.tags }}
       #   run: python3 select_tag.py >> "$GITHUB_OUTPUT"
-
+      
+      # Manually recreate the image uri.
       - name: Get Image URI
         id: get-image-uri
         env:
@@ -126,10 +131,13 @@ jobs:
             echo "DEPLOY_PATTERN=*-dev" >> "$GITHUB_OUTPUT"
           fi
       
+      # TODO: use temp creds: https://github.com/aws-actions/configure-aws-credentials?tab=readme-ov-file#oidc
       - name: Get default version number from acme-config
         id: get-default-version-number
         env:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           VERSION_NUMBER=$(uv run ac get-version -app-name $PROJECT_NAME -env dev)
           echo "VERSION_NUMBER=$VERSION_NUMBER" >> "$GITHUB_OUTPUT"
