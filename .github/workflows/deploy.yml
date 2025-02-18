@@ -138,6 +138,7 @@ jobs:
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           VERSION_NUMBER=$(uv run ac get-version -app-name $PROJECT_NAME -env dev)
           echo "VERSION_NUMBER=$VERSION_NUMBER" >> "$GITHUB_OUTPUT"
