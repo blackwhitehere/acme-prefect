@@ -29,7 +29,7 @@ on:
 
 jobs:
   deploy-production:
-    name: Deploy to production workspace
+    name: Deploy to Prefect workspace
     environment: deploy-prefect
     runs-on: ubuntu-latest
     steps:

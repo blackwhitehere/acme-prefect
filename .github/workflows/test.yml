@@ -6,6 +6,14 @@ on:
       - main
     tags:
       - 'v*'
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'uv.lock'
+      - 'pyproject.toml'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.python-version'
   pull_request:
     branches:
       - '*'
