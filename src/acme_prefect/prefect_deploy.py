@@ -2,7 +2,7 @@ import argparse
 
 from acme_prefect.flows.fetch_yahoo_data import main
 
-from acme_config import add_main_arguments, fetch_parameters
+from acme_config import add_main_arguments, load_saved_parameters
 
 
 def parse_args():
@@ -26,14 +26,14 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    parameters = fetch_parameters(args.app_name, args.env, args.ver_number)
+    env_vars = load_saved_parameters(args.app_name, args.env, args.ver_number)
     main.deploy(
-        name=f"{args.project_name}--{args.branch_name}--fetch-yahoo-data--dev",
+        name=f"{args.project_name}--{args.branch_name}--fetch-yahoo-data--{args.env}",
         description="Fetches Yahoo Finance data with minute-level granularity",
         work_pool_name="ecs-pool",  # TODO: pass as config?
         cron="0 12 * * 1-5",
         image=args.image_uri,
-        job_variables={"env": parameters},
+        job_variables={"env": env_vars},
         tags=[
             f"PROJECT_NAME={args.project_name}",
             f"BRANCH_NAME={args.branch_name}",
