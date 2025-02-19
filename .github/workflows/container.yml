@@ -5,11 +5,10 @@ env:
   REGISTRY: ghcr.io
 
 on:
-  push: # TODO: add dependence on test.yml?
-    branches:
-      - main
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Run Unit Tests - CI"]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
