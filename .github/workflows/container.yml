@@ -1,7 +1,4 @@
 name: Build and Push Docker Image
-# Check https://github.com/PrefectHQ/cicd-example-workspaces
-# https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-ci-cd
-# https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-via-python
 
 env:
   IMAGE_NAME: acme-prefect
