@@ -9,15 +9,15 @@ resolution-markers = [
 
 [[package]]
 name = "acme-config"
-version = "0.0.11"
+version = "0.0.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/32/ab/0f879451f7e98812d790e6b221024806b5dcde8db25e2a681afaebe82748/acme_config-0.0.11.tar.gz", hash = "sha256:7924196ac793511e5e0686b85826f0afe1bbf41db65046950808eeb6e98964f5", size = 5356 }
+sdist = { url = "https://files.pythonhosted.org/packages/69/7e/ab3c4f323f2bf9dd6ac1e05d3664fea3e070fb67310ba7135e92c9920818/acme_config-0.0.12.tar.gz", hash = "sha256:bc649c41624e5fd70f9caa0338836f33d746e4e372fed6fc0c97f4802e03305f", size = 5330 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/f7/fd86620be36549f1fd14259de6b2ead77c83ef3b9194b307009900861370/acme_config-0.0.11-py3-none-any.whl", hash = "sha256:9943e8c6e6bcc640441ac878e5226877fe326ce56d4604fe3c1eb6d6a6bb5d3e", size = 5781 },
+    { url = "https://files.pythonhosted.org/packages/ae/43/1f00ad860de2da3cc1d4ee06e25cbd9cf32466166e95eb9531674374ca45/acme_config-0.0.12-py3-none-any.whl", hash = "sha256:0521a91f3ec0aed204e23ec76e8dfb5ece054722b23079cb62c2b62c9c2f0e70", size = 5746 },
 ]
 
 [[package]]
