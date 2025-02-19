@@ -1,8 +1,8 @@
 name: Deploy Prefect flows to DEV
 
 env:
-  PROJECT_NAME: acme_prefect
-  PREFECT_WORKSPACE: gunerstangmailcom/test-workspace # TODO: hide
+  PACKAGE_NAME: acme_prefect
+  IMAGE_NAME: acme-prefect
   REGISTRY: ghcr.io
   ENV_LABEL: dev
 
@@ -50,18 +50,18 @@ jobs:
       - name: Get package version number
         id: get-package-version-number
         run: |
-          PACKAGE_VERSION=$(uv pip show $PROJECT_NAME | grep "Version:" | sed 's/Version: //')
+          PACKAGE_VERSION=$(uv pip show $PACKAGE_NAME | grep "Version:" | sed 's/Version: //')
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       
       - name: Get commit hash
         id: get-commit-hash
         run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
       
-      - name: Get image name
-        id: set-image-name
+      - name: Get image URI Prefix
+        id: get-image-uri-prefix
         run: |
-          IMAGE_NAME=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}
-          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          IMAGE_URI_PREFIX=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          echo "IMAGE_URI_PREFIX=$IMAGE_URI_PREFIX" >> "$GITHUB_OUTPUT"
       
       - name: Get branch name when run on branch
         if: startsWith(github.ref, 'refs/heads/')
@@ -90,9 +90,9 @@ jobs:
       #   uses: docker/metadata-action@v5
       #   env:
       #     COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
-      #     IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+      #     IMAGE_URI_PREFIX: ${{ steps.get-image-uri-prefix.outputs.IMAGE_URI_PREFIX }}
       #   with:
-      #     images: ${{ env.IMAGE_NAME }}
+      #     images: ${{ env.IMAGE_URI_PREFIX }}
       #     tags: |
       #       type=ref,suffix=-latest,event=branch
       #       type=ref,suffix=-${{ env.COMMIT_HASH }},event=branch
@@ -103,17 +103,17 @@ jobs:
       #     echo '
       #     import os
       #     tags = os.environ["TAGS"].split(",")
-      #     image_name = os.environ["IMAGE_NAME"]
+      #     IMAGE_URI_PREFIX = os.environ["IMAGE_URI_PREFIX"]
       #     non_latest = [tag for tag in tags if not tag.endswith("-latest")]
       #     assert len(non_latest) > 0, "No non-latest tags found"
       #     selected_tag = non_latest[0]
-      #     print(f"IMAGE_URI={image_name}:{selected_tag}")
+      #     print(f"IMAGE_URI={IMAGE_URI_PREFIX}:{selected_tag}")
       #     ' > select_tag.py
 
       # - name: Get Image URI
       #   id: get-image-uri
       #   env:
-      #     IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+      #     IMAGE_URI_PREFIX: ${{ steps.get-image-uri-prefix.outputs.IMAGE_URI_PREFIX }}
       #     TAGS: ${{ steps.meta.outputs.tags }}
       #   run: python3 select_tag.py >> "$GITHUB_OUTPUT"
       
@@ -121,36 +121,36 @@ jobs:
       - name: Get Image URI
         id: get-image-uri
         env:
-          IMAGE_NAME: ${{ steps.set-image-name.outputs.IMAGE_NAME }}
+          IMAGE_URI_PREFIX: ${{ steps.get-image-uri-prefix.outputs.IMAGE_URI_PREFIX }}
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
         run: |
-          echo "IMAGE_URI=$IMAGE_NAME:$BRANCH_NAME-$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_URI=$IMAGE_URI_PREFIX:$BRANCH_NAME-$COMMIT_HASH" >> "$GITHUB_OUTPUT"
       
       # TODO: use temp creds: https://github.com/aws-actions/configure-aws-credentials?tab=readme-ov-file#oidc
       - name: Get default env version number from acme-config
         id: get-default-version-number
         env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          PACKAGE_NAME: ${{ env.PACKAGE_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           ENV_LABEL: ${{ env.ENV_LABEL }}
         run: |
-          ENV_VERSION_NUMBER=$(uv run ac get-version -app-name $PROJECT_NAME -env $ENV_LABEL)
+          ENV_VERSION_NUMBER=$(uv run ac get-version -app-name $PACKAGE_NAME -env $ENV_LABEL)
           echo "ENV_VERSION_NUMBER=$ENV_VERSION_NUMBER" >> "$GITHUB_OUTPUT"
       
       - name: Get env config from acme-config
         id: get-env-config
         env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          PACKAGE_NAME: ${{ env.PACKAGE_NAME }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           ENV_LABEL: ${{ env.ENV_LABEL }}
           ENV_VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.ENV_VERSION_NUMBER }}
         run: |
-          uv run ac get-config -app-name $PROJECT_NAME -env $ENV_LABEL -ver-number $ENV_VERSION_NUMBER
+          uv run ac get-config -app-name $PACKAGE_NAME -env $ENV_LABEL -ver-number $ENV_VERSION_NUMBER
       
       # Note: we indicate dependence on get-env-config step as it produces the env file that is used by the deploy step.
       - name: Prefect Deploy
@@ -162,12 +162,12 @@ jobs:
           ENV_VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.ENV_VERSION_NUMBER }}
           ENV_LABEL: ${{ env.ENV_LABEL }}
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          PACKAGE_NAME: ${{ env.PACKAGE_NAME }}
           COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
           PACKAGE_VERSION: ${{ steps.get-package-version-number.outputs.PACKAGE_VERSION }}
         run: |
-          uv run prefect cloud workspace set -w ${{ env.PREFECT_WORKSPACE }}
-          uv run python src/$PROJECT_NAME/prefect_deploy.py -app-name $PROJECT_NAME \
+          uv run prefect cloud workspace set -w ${{ secrets.PREFECT_WORKSPACE }}
+          uv run python src/$PACKAGE_NAME/prefect_deploy.py -app-name $PACKAGE_NAME \
            -env $ENV_LABEL -ver-number $ENV_VERSION_NUMBER -image-uri $IMAGE_URI \
-           -branch-name $BRANCH_NAME -commit-hash $COMMIT_HASH -project-name $PROJECT_NAME \
+           -branch-name $BRANCH_NAME -commit-hash $COMMIT_HASH -project-name $PACKAGE_NAME \
            -package-version $PACKAGE_VERSION
