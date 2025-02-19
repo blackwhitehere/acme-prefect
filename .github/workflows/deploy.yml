@@ -43,10 +43,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       
-      # TODO: can we avoid full project install and limit the installed dependencies to ones only used in this workflow?
-      # i.e. the deploy dependencies.
       - name: Install project
         run: uv sync --all-extras --dev
+      
+      - name: Get package version number
+        id: get-package-version-number
+        run: |
+          PACKAGE_VERSION=$(uv pip show $PROJECT_NAME | grep "Version:" | sed 's/Version: //')
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
       
       - name: Get commit hash
         id: get-commit-hash
@@ -63,14 +67,14 @@ jobs:
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "Version found: $BRANCH_NAME"
+          echo "Branch name found: $BRANCH_NAME"
     
       - name: Assume branch name when run from tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           BRANCH_NAME=main
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "Version found: $BRANCH_NAME"
+          echo "Assumed branch name: $BRANCH_NAME"
       
       ## The below section shows how tag could be selected from tags generated 
       ## by docker/metadata-action@v5 that is used in the build job.
@@ -147,6 +151,7 @@ jobs:
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           PROJECT_NAME: ${{ env.PROJECT_NAME }}
           COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
+          PACKAGE_VERSION: ${{ steps.get-package-version-number.outputs.PACKAGE_VERSION }}
         run: |
           uv run prefect cloud workspace set -w ${{ env.PREFECT_WORKSPACE }}
-          uv run python src/$PROJECT_NAME/prefect_deploy.py -app-name $PROJECT_NAME -env dev -ver-number $VERSION_NUMBER -image-uri $IMAGE_URI -branch-name $BRANCH_NAME -commit-hash $COMMIT_HASH -project-name $PROJECT_NAME
+          uv run python src/$PROJECT_NAME/prefect_deploy.py -app-name $PROJECT_NAME -env dev -ver-number $VERSION_NUMBER -image-uri $IMAGE_URI -branch-name $BRANCH_NAME -commit-hash $COMMIT_HASH -project-name $PROJECT_NAME -package-version $PACKAGE_VERSION

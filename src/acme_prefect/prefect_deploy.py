@@ -20,6 +20,7 @@ def parse_args():
     )
     parser.add_argument("-commit-hash", type=str, help="Git commit hash")
     parser.add_argument("-image-uri", type=str, help="Image URI")
+    parser.add_argument("-package-version", type=str, help="Package version")
     return parser.parse_args()
 
 
@@ -33,7 +34,12 @@ if __name__ == "__main__":
         cron="0 12 * * 1-5",
         image=args.image_uri,
         job_variables={"env": parameters},
-        tags=[args.project_name, args.branch_name, args.commit_hash],
+        tags=[
+            f"PROJECT_NAME={args.project_name}",
+            f"BRANCH_NAME={args.branch_name}",
+            f"COMMIT_HASH={args.commit_hash}",
+            f"PACKAGE_VERSION={args.package_version}",
+        ],
         version=f"{args.branch_name}-{args.commit_hash}",
         build=False,
         push=False,
