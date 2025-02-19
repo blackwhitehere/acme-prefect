@@ -153,7 +153,7 @@ jobs:
           ENV_LABEL: ${{ env.ENV_LABEL }}
           ENV_VERSION_NUMBER: ${{ steps.get-default-version-number.outputs.ENV_VERSION_NUMBER }}
         run: |
-          uv run ac get-config -app-name $PACKAGE_NAME -env $ENV_LABEL -ver-number $ENV_VERSION_NUMBER
+          uv run ac fetch -app-name $PACKAGE_NAME -env $ENV_LABEL -ver-number $ENV_VERSION_NUMBER
       
       # Note: we indicate dependence on get-env-config step as it produces the env file that is used by the deploy step.
       - name: Prefect Deploy
