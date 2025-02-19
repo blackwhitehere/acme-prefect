@@ -72,13 +72,14 @@ if __name__ == "__main__":
         flow_config = STATIC_CONFIG[flow_name]
         module_path, function_name = flow_config["import_path"].split(":")
         flow_function = import_function(module_path, function_name)
+        flow_name = f"{args.project_name}--{args.branch_name}--{flow_config['name']}--{args.env}"
         flow_function.deploy(
-            name=f"{args.project_name}--{args.branch_name}--{flow_config['name']}--{args.env}",
+            name=flow_name,
             description=flow_config["description"],
             work_pool_name=flow_config["work_pool_name"],
             cron=flow_config["cron"],
             image=args.image_uri,
-            job_variables={"env": env_vars},
+            job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": flow_name}},
             tags=[
                 f"PROJECT_NAME={args.project_name}",
                 f"BRANCH_NAME={args.branch_name}",
