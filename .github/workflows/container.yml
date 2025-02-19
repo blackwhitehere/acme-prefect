@@ -4,7 +4,7 @@ name: Build and Push Docker Image
 # https://docs.prefect.io/v3/deploy/infrastructure-concepts/deploy-via-python
 
 env:
-  PROJECT_NAME: acme_prefect # TODO: standardize on - in name of image
+  IMAGE_NAME: acme-prefect
   REGISTRY: ghcr.io
 
 on:
@@ -47,21 +47,20 @@ jobs:
         env:
           COMMIT_HASH: ${{ steps.get-commit-hash.outputs.COMMIT_HASH }}
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,suffix=-latest,event=branch
             type=ref,suffix=-${{ env.COMMIT_HASH }},event=branch
             type=pep440,pattern={{version}},suffix=-${{ env.COMMIT_HASH }} # human readable version
       
-      # TODO: verify options and interactions between cache-from/cache-to and layer caching in Dockerfile
       - name: Build & Push Docker image
         id: build-docker-image
         uses: docker/build-push-action@v6
         with:
-          context: . # context for env.PROJECT_NAME is currently root dir of the repo, but this will change if multiple projects are in the repo
+          context: . # context for env.IMAGE_NAME is currently root dir of the repo, but this will change if multiple projects are in the repo
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: |
             type=gha
-            type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.PROJECT_NAME }}:main-latest
+            type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main-latest
           cache-to: type=gha,mode=max
