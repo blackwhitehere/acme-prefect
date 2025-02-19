@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 from io import BytesIO
+import logging
 
 from prefect import flow
 from prefect_aws import AwsCredentials
 
 import yfinance as yf
 from retry import retry
+
+logger = logging.getLogger(__name__)
 
 
 aws_credentials_block = AwsCredentials.load("dev-bucket")
@@ -68,17 +71,16 @@ def main():
     try:
         data = get_minute_data(stock, start_date, end_date)
     except Exception as e:
-        print(f"Failed to fetch data: {e}")
-        data = None
+        logger.error(f"Failed to fetch data: {e}")
+        raise
 
-    if data is not None:
-        s3_client = aws_credentials_block.get_s3_client()
-        save_data_to_s3(
-            data,
-            "acme-s3-dev",
-            f"dw/yahoo/price_history/minute/{stock}/{end_date:%Y}/{start_date:%Y%m%d}_{end_date:%Y%m%d}.parquet",
-            s3_client,
-        )
+    s3_client = aws_credentials_block.get_s3_client()
+    save_data_to_s3(
+        data,
+        "acme-s3-dev",
+        f"dw/yahoo/price_history/minute/{stock}/{end_date:%Y}/{start_date:%Y%m%d}_{end_date:%Y%m%d}.parquet",
+        s3_client,
+    )
 
 if __name__ == "__main__":
     main()
