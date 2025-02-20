@@ -126,6 +126,8 @@ def deploy(args):
             push=False,
         )
 
+def extract_tag_value(tags, tag_name):
+    return [x for x in tags if x.startswith(f"{tag_name}=")][0].split("=")[1]
 
 def promote(args):
     client = get_client()
@@ -137,10 +139,14 @@ def promote(args):
         deploy_config = STATIC_CONFIG[flow_name]
         underscore_flow_name = deploy_config["name"].replace("-", "_")
         deployment_name = f"{args.project_name}--{args.branch_name}--{deploy_config['name']}--{args.source_env}"
-        r = dict(asyncio.run(client.read_deployment_by_name(f"{underscore_flow_name}/{deployment_name}")))
+        try:
+            r = dict(asyncio.run(client.read_deployment_by_name(f"{underscore_flow_name}/{deployment_name}")))
+        except Exception:
+            logger.error(f"Encountered error while fetching deployment info for `{underscore_flow_name}/{deployment_name}`")
+            raise
         args.image_uri = r["job_variables"]["image"]
-        args.package_version = [x for x in r["tags"] if x.startswith("PACKAGE_VERSION=")][0].split("=")[1]
-        args.commit_hash = [x for x in r["tags"] if x.startswith("COMMIT_HASH=")][0].split("=")[1]
+        args.package_version = extract_tag_value(r["tags"], "PACKAGE_VERSION")
+        args.commit_hash = extract_tag_value(r["tags"], "COMMIT_HASH")
         # TODO: note that description, work_pool_name, cron, etc. are set from current version of 
         # static config rather than being inherited from source deployment
         deploy(args)
