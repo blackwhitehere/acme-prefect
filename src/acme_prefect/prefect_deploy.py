@@ -1,8 +1,11 @@
 import argparse
+import logging
 import importlib
 from importlib.util import find_spec
 
 from acme_config import add_main_arguments, load_saved_parameters
+
+logger = logging.getLogger(__name__)
 
 # TODO: set from acme-config?
 STATIC_CONFIG = {
@@ -21,16 +24,16 @@ def import_function(module_path, function_name):
         # Check if module exists
         if find_spec(module_path) is None:
             raise ImportError(f"Module {module_path} not found")
-        
+
         # Import module
         module = importlib.import_module(module_path)
-        
+
         # Get function
         if not hasattr(module, function_name):
             raise AttributeError(f"Function {function_name} not found in {module_path}")
-        
+
         return getattr(module, function_name)
-    
+
     except Exception as e:
         print(f"Error importing {function_name} from {module_path}: {e}")
         raise
@@ -38,31 +41,56 @@ def import_function(module_path, function_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Deploy flows to prefect")
-    add_main_arguments(parser)
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="command")
+    # Deploy parser for initial deployment
+    deploy_parser = subparsers.add_parser("deploy")
+    add_main_arguments(deploy_parser)
+    deploy_parser.add_argument(
         "-project-name",
         type=lambda x: str(x).replace("_", "-"),
         help="Name of the project",
     )
-    parser.add_argument(
+    deploy_parser.add_argument(
         "-branch-name",
         type=lambda x: str(x).replace("_", "-"),
         help="Name of the branch",
     )
-    parser.add_argument("-commit-hash", type=str, help="Git commit hash")
-    parser.add_argument("-image-uri", type=str, help="Image URI")
-    parser.add_argument("-package-version", type=str, help="Package version")
-    parser.add_argument(
+    deploy_parser.add_argument("-commit-hash", type=str, help="Git commit hash")
+    deploy_parser.add_argument("-image-uri", type=str, help="Image URI")
+    deploy_parser.add_argument("-package-version", type=str, help="Package version")
+    deploy_parser.add_argument(
         "--flows-to-deploy",
         type=str,
         default="all",
         help="Comma separated list of flow config names to deploy, or 'all'",
     )
+
+    # Promote parser for promoting deployment from one environment to another
+    promote_parser = subparsers.add_parser("promote")
+    add_main_arguments(promote_parser)
+    promote_parser.add_argument("-source-env", type=str, help="Source environment")
+    promote_parser.add_argument("-target-env", type=str, help="Target environment")
+    promote_parser.add_argument(
+        "-project-name",
+        type=lambda x: str(x).replace("_", "-"),
+        help="Name of the project",
+    )
+    promote_parser.add_argument(
+        "-branch-name",
+        type=lambda x: str(x).replace("_", "-"),
+        help="Name of the branch",
+    )
+    promote_parser.add_argument(
+        "--flows-to-deploy",
+        type=str,
+        default="all",
+        help="Comma separated list of flow config names to deploy, or 'all'",
+    )
+
     return parser.parse_args()
 
 
-if __name__ == "__main__":
-    args = parse_args()
+def deploy(args):
     env_vars = load_saved_parameters(args.app_name, args.env, args.ver_number)
     if args.flows_to_deploy == "all":
         flows_to_deploy = STATIC_CONFIG.keys()
@@ -72,9 +100,13 @@ if __name__ == "__main__":
         flow_config = STATIC_CONFIG[flow_name]
         module_path, function_name = flow_config["import_path"].split(":")
         flow_function = import_function(module_path, function_name)
-        flow_name = f"{args.project_name}--{args.branch_name}--{flow_config['name']}--{args.env}"
+        # make sure flow name is the same as in the config
+        if flow_function.name != flow_config["name"]:
+            logger.warning(f"Flow name {flow_function.name} does not match config name {flow_config['name']}!")
+            flow_function.name = flow_config["name"]
+        deployment_name = f"{args.project_name}--{args.branch_name}--{flow_config['name']}--{args.env}"
         flow_function.deploy(
-            name=flow_name,
+            name=deployment_name,
             description=flow_config["description"],
             work_pool_name=flow_config["work_pool_name"],
             cron=flow_config["cron"],
@@ -90,3 +122,21 @@ if __name__ == "__main__":
             build=False,
             push=False,
         )
+
+
+def promote(args):
+    pass
+
+
+def main_logic(args):
+    if args.command == "deploy":
+        deploy(args)
+    elif args.command == "promote":
+        promote(args)
+    else:
+        raise ValueError(f"Invalid command: {args.command}")
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    main_logic(args)

@@ -63,7 +63,7 @@ def save_data_to_s3(data, bucket, key, s3_client):
     s3_client.upload_fileobj(buffer, bucket, key)
 
 
-@flow(name="Fetch Yahoo Data", log_prints=True)
+@flow(name="fetch-yahoo-data", log_prints=True)
 def main():
     start_date, end_date = get_date_range(days_back=1)
     stock = "AAPL"
