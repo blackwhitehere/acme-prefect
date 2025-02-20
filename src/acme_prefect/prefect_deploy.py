@@ -1,7 +1,10 @@
 import argparse
 import logging
 import importlib
+import asyncio
 from importlib.util import find_spec
+
+from prefect.client.orchestration import get_client
 
 from acme_config import add_main_arguments, load_saved_parameters
 
@@ -69,7 +72,6 @@ def parse_args():
     promote_parser = subparsers.add_parser("promote")
     add_main_arguments(promote_parser)
     promote_parser.add_argument("-source-env", type=str, help="Source environment")
-    promote_parser.add_argument("-target-env", type=str, help="Target environment")
     promote_parser.add_argument(
         "-project-name",
         type=lambda x: str(x).replace("_", "-"),
@@ -97,21 +99,22 @@ def deploy(args):
     else:
         flows_to_deploy = args.flows_to_deploy.split(",")
     for flow_name in flows_to_deploy:
-        flow_config = STATIC_CONFIG[flow_name]
-        module_path, function_name = flow_config["import_path"].split(":")
+        deploy_config = STATIC_CONFIG[flow_name]
+        module_path, function_name = deploy_config["import_path"].split(":")
         flow_function = import_function(module_path, function_name)
-        # make sure flow name is the same as in the config
-        if flow_function.name != flow_config["name"]:
-            logger.warning(f"Flow name {flow_function.name} does not match config name {flow_config['name']}!")
-            flow_function.name = flow_config["name"]
-        deployment_name = f"{args.project_name}--{args.branch_name}--{flow_config['name']}--{args.env}"
+        # align with expectation of flow name being flow function name with underscores
+        underscore_flow_name = deploy_config["name"].replace("-", "_")
+        if flow_function.name != underscore_flow_name:
+            logger.info(f"Standardizing flow name {flow_function.name} for deployment to {underscore_flow_name}")
+            flow_function.name = underscore_flow_name
+        deployment_name = f"{args.project_name}--{args.branch_name}--{deploy_config['name']}--{args.env}"
         flow_function.deploy(
             name=deployment_name,
-            description=flow_config["description"],
-            work_pool_name=flow_config["work_pool_name"],
-            cron=flow_config["cron"],
+            description=deploy_config["description"],
+            work_pool_name=deploy_config["work_pool_name"],
+            cron=deploy_config["cron"],
             image=args.image_uri,
-            job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": flow_name}},
+            job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": deployment_name}},
             tags=[
                 f"PROJECT_NAME={args.project_name}",
                 f"BRANCH_NAME={args.branch_name}",
@@ -125,7 +128,22 @@ def deploy(args):
 
 
 def promote(args):
-    pass
+    client = get_client()
+    if args.flows_to_deploy == "all":
+        flows_to_deploy = STATIC_CONFIG.keys()
+    else:
+        flows_to_deploy = args.flows_to_deploy.split(",")
+    for flow_name in flows_to_deploy:
+        deploy_config = STATIC_CONFIG[flow_name]
+        underscore_flow_name = deploy_config["name"].replace("-", "_")
+        deployment_name = f"{args.project_name}--{args.branch_name}--{deploy_config['name']}--{args.source_env}"
+        r = dict(asyncio.run(client.read_deployment_by_name(f"{underscore_flow_name}/{deployment_name}")))
+        args.image_uri = r["job_variables"]["image"]
+        args.package_version = [x for x in r["tags"] if x.startswith("PACKAGE_VERSION=")][0].split("=")[1]
+        args.commit_hash = [x for x in r["tags"] if x.startswith("COMMIT_HASH=")][0].split("=")[1]
+        # TODO: note that description, work_pool_name, cron, etc. are set from current version of 
+        # static config rather than being inherited from source deployment
+        deploy(args)
 
 
 def main_logic(args):
