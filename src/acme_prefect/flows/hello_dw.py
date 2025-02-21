@@ -35,7 +35,7 @@ def main():
         file_type="parquet",
     )
     # TODO: read bucket name from env var
-    dw = DW("acme-s3-dev", boto3_client=s3_client)
+    dw = DW("acme-s3-dev", s3_client_kwargs={"boto3_client": s3_client})
     dw.write_df(data, metadata)
 
 
