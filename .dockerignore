@@ -4,13 +4,6 @@
 .github/
 
 # Python
-__pycache__/
-.Python
-*.py[cod]
-# Python creates .pyc files (compiled bytecode) when running code
-# When a Python file contains a class, it also creates a *.py.class file
-# This pattern ignores those class-specific bytecode files
-*$py.class
 .pytest_cache/
 .coverage
 

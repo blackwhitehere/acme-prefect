@@ -1,13 +1,11 @@
+import logging
 import os
 from datetime import datetime, timedelta
-import logging
 
 import pandas as pd
+from acme_dw import DW, DatasetMetadata
 from prefect import flow
 from prefect_aws import AwsCredentials
-
-from acme_dw import DatasetMetadata, DW
-
 
 logger = logging.getLogger(__name__)
 
