@@ -1,9 +1,10 @@
+import os
 from datetime import datetime, timedelta
-from io import BytesIO
 import logging
 
 from prefect import flow
 from prefect_aws import AwsCredentials
+from acme_dw import DatasetMetadata, DW
 
 import yfinance as yf
 from retry import retry
@@ -43,26 +44,6 @@ def get_date_range(days_back=1):
     return start_date, end_date
 
 
-def save_data_to_s3(data, bucket, key, s3_client):
-    """
-    Save data to an S3 bucket.
-
-    Args:
-        data (pandas.DataFrame): Data to save
-        bucket (str): S3 bucket name
-        key (str): S3 object key
-        s3_client (boto3.client): Boto3 S3 client
-    """
-
-    # Convert DataFrame to parquet format in memory
-    buffer = BytesIO()
-    data.to_parquet(buffer, index=True)
-    buffer.seek(0)
-
-    # Upload the parquet file to S3
-    s3_client.upload_fileobj(buffer, bucket, key)
-
-
 @flow(name="fetch-yahoo-data", log_prints=True)
 def main():
     start_date, end_date = get_date_range(days_back=1)
@@ -75,12 +56,18 @@ def main():
         raise
 
     s3_client = aws_credentials_block.get_s3_client()
-    save_data_to_s3(
-        data,
-        "acme-s3-dev",
-        f"dw/yahoo/price_history/minute/{stock}/{end_date:%Y}/{start_date:%Y%m%d}_{end_date:%Y%m%d}.parquet",
-        s3_client,
+    metadata = DatasetMetadata(
+        source="yahoo_finance",
+        name="price_history",
+        version="v1",
+        process_id=os.environ.get("DEPLOYMENT_NAME", "fetch_yahoo_data"),
+        partitions=["minute", stock, end_date.strftime("%Y")],
+        file_name=f"{start_date:%Y%m%d}_{end_date:%Y%m%d}.parquet",
+        file_type="parquet",
     )
+    # TODO: read bucket name from env var
+    dw = DW("acme-s3-dev", boto3_client=s3_client)
+    dw.write_df(data, metadata)
 
 if __name__ == "__main__":
     main()

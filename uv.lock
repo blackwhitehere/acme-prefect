@@ -21,11 +21,27 @@ wheels = [
 ]
 
 [[package]]
+name = "acme-dw"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "acme-s3" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a4/4d/ee82ca5acba2ffcf2f8c5fe3a68fbd2c7876b0c1c18d1bd148fb44204dfb/acme_dw-0.0.1.tar.gz", hash = "sha256:6a5f8c096187b23123afea7cb70253ede5fa7a74df76d8c863ce8b276d1d1b1e", size = 5841 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/36/50/9a01ce76298dfc3499376a0b57e943f8b70098375ccc61b0691c78f40c95/acme_dw-0.0.1-py3-none-any.whl", hash = "sha256:4d6a6309648bf42a526b95faee01c96bd834012922b896104f66893adacbb95d", size = 6046 },
+]
+
+[[package]]
 name = "acme-prefect"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "acme-config" },
+    { name = "acme-dw" },
     { name = "pandas" },
     { name = "prefect" },
     { name = "prefect-aws" },
@@ -49,6 +65,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "acme-config" },
+    { name = "acme-dw" },
     { name = "isort", marker = "extra == 'dev'" },
     { name = "jupyterlab", marker = "extra == 'dev'" },
     { name = "mkdocs", marker = "extra == 'dev'" },
@@ -65,6 +82,23 @@ requires-dist = [
     { name = "yfinance" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "acme-s3"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backoff" },
+    { name = "boto3" },
+    { name = "botocore" },
+    { name = "pandas" },
+    { name = "python-dotenv" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/17/15/5b8d69177376669beffcd8fea99230c046ec72a855f17f47a7730474bbc4/acme_s3-0.0.3.tar.gz", hash = "sha256:9466c6c1ff95122ead758e1d6d49acebef3a46fe8acdf3f48c1bd6a6574b3699", size = 7946 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2d/5b/88241af3ba057e906315a30574000e18d1025de5db04a94ed2b5bd3cb899/acme_s3-0.0.3-py3-none-any.whl", hash = "sha256:e1136afc53713080ff8e03a3e69a866d39eb9df0ea13f26beb4bb509648754eb", size = 7327 },
+]
 
 [[package]]
 name = "aiosqlite"
@@ -289,6 +323,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/6b/d52e42361e1aa00709585ecc30b3f9684b3ab62530771402248b1b1d6240/babel-2.17.0.tar.gz", hash = "sha256:0c54cffb19f690cdcc52a3b50bcbf71e07a808d1c80d549f2459b9d2cf0afb9d", size = 9951852 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/b8/3fe70c75fe32afc4bb507f75563d39bc5642255d1d94f1f23604725780bf/babel-2.17.0-py3-none-any.whl", hash = "sha256:4d0b53093fdfb4b21c92b5213dba5a1b23885afa8383709427046b21c366e5f2", size = 10182537 },
+]
+
+[[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148 },
 ]
 
 [[package]]
@@ -3165,6 +3208,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/ae/c1b22d4524b0e10da2f29a176fb2890386f7bd1f63aacf186444873a88a0/tornado-6.4.2-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:932d195ca9015956fa502c6b56af9eb06106140d844a335590c1ec7f5277d10c", size = 437261 },
     { url = "https://files.pythonhosted.org/packages/b5/25/36dbd49ab6d179bcfc4c6c093a51795a4f3bed380543a8242ac3517a1751/tornado-6.4.2-cp38-abi3-win32.whl", hash = "sha256:2876cef82e6c5978fde1e0d5b1f919d756968d5b4282418f3146b79b58556482", size = 438463 },
     { url = "https://files.pythonhosted.org/packages/61/cc/58b1adeb1bb46228442081e746fcdbc4540905c87e8add7c277540934edb/tornado-6.4.2-cp38-abi3-win_amd64.whl", hash = "sha256:908b71bf3ff37d81073356a5fadcc660eb10c1476ee6e2725588626ce7e5ca38", size = 438907 },
+]
+
+[[package]]
+name = "tqdm"
+version = "4.67.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540 },
 ]
 
 [[package]]

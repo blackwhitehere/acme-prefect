@@ -22,6 +22,7 @@ dependencies = [
     "pandas",
     "pyarrow",
     "acme_config",
+    "acme_dw",
 ]
 
 [[project.authors]]
