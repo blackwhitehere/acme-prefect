@@ -56,7 +56,8 @@ jobs:
           context: . # context for env.IMAGE_NAME is currently root dir of the repo, but this will change if multiple projects are in the repo
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
           cache-from: |
             type=gha
+            type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main-latest
           cache-to: type=gha,mode=max
-          # type=registry,ref=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:main-latest
