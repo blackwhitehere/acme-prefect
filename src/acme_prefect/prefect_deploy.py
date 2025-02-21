@@ -19,6 +19,20 @@ STATIC_CONFIG = {
         "description": "Fetches Yahoo Finance data with minute-level granularity",
         "work_pool_name": "ecs-pool",
     },
+    "hello-dw": {
+        "name": "hello-dw",
+        "import_path": "acme_prefect.flows.hello_dw:main",
+        "cron": "0 12 * * 1-5",
+        "description": "Hello DW",
+        "work_pool_name": "ecs-pool",
+    },
+    "hello-world": {
+        "name": "hello-world",
+        "import_path": "acme_prefect.flows.hello_world:hello_world",
+        "cron": "0 12 * * 1-5",
+        "description": "Hello World",
+        "work_pool_name": "ecs-pool",
+    },
 }
 
 
