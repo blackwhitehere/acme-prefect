@@ -7,6 +7,10 @@ def image_bug(name: str = "world"):
 
 
 if __name__ == "__main__":
-    image_bug.deploy(build=False,
-                       push=False,
-                       image="ghcr.io/blackwhitehere/acme-prefect:main-latest")
+    image_bug.deploy(
+        name="image-bug-deployment",
+        build=False,
+        push=False,
+        work_pool_name="ecs-pool",
+        image="ghcr.io/blackwhitehere/acme-prefect:main-latest",
+    )
