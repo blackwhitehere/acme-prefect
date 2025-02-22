@@ -127,7 +127,10 @@ def deploy(args):
             description=deploy_config["description"],
             work_pool_name=deploy_config["work_pool_name"],
             cron=deploy_config["cron"],
-            image=args.image_uri, # FIXME: this param is ignored by prefect when task is started on ECS
+            # FIXME: this param is ignored by prefect when task is started on ECS
+            # 
+            # https://github.com/PrefectHQ/prefect/issues/17249
+            image=args.image_uri,
             job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": deployment_name},
                            "image": args.image_uri},
             tags=[
