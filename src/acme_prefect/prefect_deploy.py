@@ -113,7 +113,7 @@ def deploy(args):
     else:
         flows_to_deploy = args.flows_to_deploy.split(",")
     for flow_name in flows_to_deploy:
-        deploy_config = STATIC_CONFIG[flow_name]
+        deploy_config = STATIC_CONFIG[flow_name.replace("-", "_")]
         module_path, function_name = deploy_config["import_path"].split(":")
         flow_function = import_function(module_path, function_name)
         # align with expectation of flow name being flow function name with underscores
@@ -121,7 +121,9 @@ def deploy(args):
         if flow_function.name != underscore_flow_name:
             logger.info(f"Standardizing flow name {flow_function.name} for deployment to {underscore_flow_name}")
             flow_function.name = underscore_flow_name
-        deployment_name = f"{args.project_name}--{args.branch_name}--{deploy_config['name']}--{args.env}"
+        # make sure flow name in deployment name is hyphenated
+        hyphen_flow_name = deploy_config["name"].replace("_", "-")
+        deployment_name = f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.env}"
         flow_function.deploy(
             name=deployment_name,
             description=deploy_config["description"],
@@ -153,9 +155,10 @@ def promote(args):
     else:
         flows_to_deploy = args.flows_to_deploy.split(",")
     for flow_name in flows_to_deploy:
-        deploy_config = STATIC_CONFIG[flow_name]
+        deploy_config = STATIC_CONFIG[flow_name.replace("-", "_")]
         underscore_flow_name = deploy_config["name"].replace("-", "_")
-        deployment_name = f"{args.project_name}--{args.branch_name}--{deploy_config['name']}--{args.source_env}"
+        hyphen_flow_name = deploy_config["name"].replace("_", "-")
+        deployment_name = f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.source_env}"
         try:
             r = dict(asyncio.run(client.read_deployment_by_name(f"{underscore_flow_name}/{deployment_name}")))
         except Exception:
