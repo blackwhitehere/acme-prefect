@@ -44,7 +44,7 @@ def get_date_range(days_back=1):
     return start_date, end_date
 
 
-@flow(name="fetch-yahoo-data", log_prints=True)
+@flow(name="fetch_yahoo_data", log_prints=True)
 def main():
     start_date, end_date = get_date_range(days_back=1)
     stock = "AAPL"

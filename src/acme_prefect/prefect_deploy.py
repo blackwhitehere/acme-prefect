@@ -12,22 +12,22 @@ logger = logging.getLogger(__name__)
 
 # TODO: set from acme-config?
 STATIC_CONFIG = {
-    "fetch-yahoo-data": {
-        "name": "fetch-yahoo-data",
+    "fetch_yahoo_data": {
+        "name": "fetch_yahoo_data",
         "import_path": "acme_prefect.flows.fetch_yahoo_data:main",
         "cron": "0 12 * * 1-5",
         "description": "Fetches Yahoo Finance data with minute-level granularity",
         "work_pool_name": "ecs-pool",
     },
-    "hello-dw": {
-        "name": "hello-dw",
+    "hello_dw": {
+        "name": "hello_dw",
         "import_path": "acme_prefect.flows.hello_dw:main",
         "cron": "0 12 * * 1-5",
         "description": "Hello DW",
         "work_pool_name": "ecs-pool",
     },
-    "hello-world": {
-        "name": "hello-world",
+    "hello_world": {
+        "name": "hello_world",
         "import_path": "acme_prefect.flows.hello_world:hello_world",
         "cron": "0 12 * * 1-5",
         "description": "Hello World",
@@ -146,6 +146,7 @@ def extract_tag_value(tags, tag_name):
     return [x for x in tags if x.startswith(f"{tag_name}=")][0].split("=")[1]
 
 def promote(args):
+    # todo: use sync_client=True
     client = get_client()
     if args.flows_to_deploy == "all":
         flows_to_deploy = STATIC_CONFIG.keys()
