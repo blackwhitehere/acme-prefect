@@ -2,15 +2,19 @@ import argparse
 import logging
 import importlib
 import asyncio
+import inspect
+import pkgutil
 from importlib.util import find_spec
 
 from prefect.client.orchestration import get_client
+from prefect import Flow
 
 from acme_config import add_main_arguments, load_saved_parameters
 
 logger = logging.getLogger(__name__)
 
-# TODO: set from acme-config?
+# TODO: set from acme-config/local config file
+DEFAULT_WORK_POOL = "ecs-pool"
 STATIC_CONFIG = {
     "fetch_yahoo_data": {
         "name": "fetch_yahoo_data",
@@ -54,6 +58,63 @@ def import_function(module_path, function_name):
     except Exception as e:
         print(f"Error importing {function_name} from {module_path}: {e}")
         raise
+
+
+def discover_flows(package_name="acme_prefect.flows"):
+    """
+    Discovers all Prefect flow functions in the specified package.
+    
+    Args:
+        package_name: The name of the package to scan for flows
+
+    Returns:
+        A dictionary mapping flow names to flow info dictionaries
+    """
+    flows_dict = {}
+    logger.info(f"Discovering flows in package {package_name}")
+    try:
+        # Import the package
+        package = importlib.import_module(package_name)
+        
+        # Get the package path
+        package_path = package.__path__
+        
+        # Iterate through all modules in the package
+        for _, module_name, _ in pkgutil.iter_modules(package_path):
+            full_module_name = f"{package_name}.{module_name}"
+            
+            try:
+                module = importlib.import_module(full_module_name)
+                
+                # Inspect all module members
+                for name, obj in inspect.getmembers(module):
+                    # Check if it's a flow object (has __prefect_flow__ attribute set to True)
+                    if isinstance(obj, Flow):
+                        flow_name = obj.name.replace('-', '_')
+                        
+                        # Extract description from docstring if not explicitly set
+                        if hasattr(obj, "description"):
+                            description = obj.description
+                        elif obj.__doc__:
+                            description = inspect.getdoc(obj).strip().split("\n")[0]
+                        else:
+                            description = f"Flow from {module_name}"
+                        
+                        flows_dict[flow_name] = {
+                            "name": flow_name,
+                            "orignal_name": obj.name,
+                            "import_path": f"{full_module_name}:{name}",
+                            "description": description,
+                            "cron": None,
+                            "work_pool_name": DEFAULT_WORK_POOL,  # Default work pool
+                        }
+            except Exception as e:
+                logger.warning(f"Error inspecting module {full_module_name}: {e}")
+    
+    except Exception as e:
+        logger.error(f"Error discovering flows in package {package_name}: {e}")
+    logger.info(f"Discovered {len(flows_dict)} flows")
+    return flows_dict
 
 
 def parse_args():
@@ -108,12 +169,20 @@ def parse_args():
 
 def deploy(args):
     env_vars = load_saved_parameters(args.app_name, args.env, args.ver_number)
+    dynamic_config = discover_flows()
     if args.flows_to_deploy == "all":
-        flows_to_deploy = STATIC_CONFIG.keys()
+        flows_to_deploy = dynamic_config.keys()
     else:
         flows_to_deploy = args.flows_to_deploy.split(",")
-    for flow_name in flows_to_deploy:
-        deploy_config = STATIC_CONFIG[flow_name.replace("-", "_")]
+        flows_to_deploy = [flow_name.replace("-", "_") for flow_name in flows_to_deploy]
+
+    for std_flow_name in flows_to_deploy:
+        if std_flow_name in STATIC_CONFIG:
+            deploy_config = STATIC_CONFIG[std_flow_name]
+        else:
+            if std_flow_name not in dynamic_config:
+                raise ValueError(f"Flow {std_flow_name} not found in config")
+            deploy_config = dynamic_config[std_flow_name]
         module_path, function_name = deploy_config["import_path"].split(":")
         flow_function = import_function(module_path, function_name)
         # align with expectation of flow name being flow function name with underscores
@@ -150,12 +219,20 @@ def extract_tag_value(tags, tag_name):
 def promote(args):
     # todo: use sync_client=True
     client = get_client()
+    dynamic_config = discover_flows()
     if args.flows_to_deploy == "all":
-        flows_to_deploy = STATIC_CONFIG.keys()
+        flows_to_deploy = dynamic_config.keys()
     else:
         flows_to_deploy = args.flows_to_deploy.split(",")
-    for flow_name in flows_to_deploy:
-        deploy_config = STATIC_CONFIG[flow_name.replace("-", "_")]
+        flows_to_deploy = [flow_name.replace("-", "_") for flow_name in flows_to_deploy]
+
+    for std_flow_name in flows_to_deploy:
+        if std_flow_name in STATIC_CONFIG:
+            deploy_config = STATIC_CONFIG[std_flow_name]
+        else:
+            if std_flow_name not in dynamic_config:
+                raise ValueError(f"Flow {std_flow_name} not found in config")
+            deploy_config = dynamic_config[std_flow_name]
         underscore_flow_name = deploy_config["name"].replace("-", "_")
         hyphen_flow_name = deploy_config["name"].replace("_", "-")
         deployment_name = f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.source_env}"
