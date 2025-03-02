@@ -66,8 +66,9 @@ venv.bak/
 # mkdocs documentation
 site/
 
-# PyCharm
+# IDE
 .idea/
+launch.json
 
 # folder metadata
 .DS_Store
