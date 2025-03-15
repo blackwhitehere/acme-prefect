@@ -63,7 +63,7 @@ def import_function(module_path, function_name):
 def discover_flows(package_name="acme_prefect.flows"):
     """
     Discovers all Prefect flow functions in the specified package.
-    
+
     Args:
         package_name: The name of the package to scan for flows
 
@@ -75,23 +75,23 @@ def discover_flows(package_name="acme_prefect.flows"):
     try:
         # Import the package
         package = importlib.import_module(package_name)
-        
+
         # Get the package path
         package_path = package.__path__
-        
+
         # Iterate through all modules in the package
         for _, module_name, _ in pkgutil.iter_modules(package_path):
             full_module_name = f"{package_name}.{module_name}"
-            
+
             try:
                 module = importlib.import_module(full_module_name)
-                
+
                 # Inspect all module members
                 for name, obj in inspect.getmembers(module):
                     # Check if it's a flow object (has __prefect_flow__ attribute set to True)
                     if isinstance(obj, Flow):
-                        flow_name = obj.name.replace('-', '_')
-                        
+                        flow_name = obj.name.replace("-", "_")
+
                         # Extract description from docstring if not explicitly set
                         if hasattr(obj, "description"):
                             description = obj.description
@@ -99,7 +99,7 @@ def discover_flows(package_name="acme_prefect.flows"):
                             description = inspect.getdoc(obj).strip().split("\n")[0]
                         else:
                             description = f"Flow from {module_name}"
-                        
+
                         flows_dict[flow_name] = {
                             "name": flow_name,
                             "orignal_name": obj.name,
@@ -110,7 +110,7 @@ def discover_flows(package_name="acme_prefect.flows"):
                         }
             except Exception as e:
                 logger.warning(f"Error inspecting module {full_module_name}: {e}")
-    
+
     except Exception as e:
         logger.error(f"Error discovering flows in package {package_name}: {e}")
     logger.info(f"Discovered {len(flows_dict)} flows")
@@ -188,11 +188,15 @@ def deploy(args):
         # align with expectation of flow name being flow function name with underscores
         underscore_flow_name = deploy_config["name"].replace("-", "_")
         if flow_function.name != underscore_flow_name:
-            logger.info(f"Standardizing flow name {flow_function.name} for deployment to {underscore_flow_name}")
+            logger.info(
+                f"Standardizing flow name {flow_function.name} for deployment to {underscore_flow_name}"
+            )
             flow_function.name = underscore_flow_name
         # make sure flow name in deployment name is hyphenated
         hyphen_flow_name = deploy_config["name"].replace("_", "-")
-        deployment_name = f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.env}"
+        deployment_name = (
+            f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.env}"
+        )
         flow_function.deploy(
             name=deployment_name,
             description=deploy_config["description"],
@@ -201,7 +205,8 @@ def deploy(args):
             # FIXME: this param is ignored by prefect when task is started on ECS
             # https://github.com/PrefectHQ/prefect/issues/17249
             image=args.image_uri,
-            job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": deployment_name}}, 
+            job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": deployment_name},
+                           "image": args.image_uri},
             tags=[
                 f"PROJECT_NAME={args.project_name}",
                 f"BRANCH_NAME={args.branch_name}",
@@ -213,8 +218,10 @@ def deploy(args):
             push=False,
         )
 
+
 def extract_tag_value(tags, tag_name):
     return [x for x in tags if x.startswith(f"{tag_name}=")][0].split("=")[1]
+
 
 def promote(args):
     # todo: use sync_client=True
@@ -237,14 +244,22 @@ def promote(args):
         hyphen_flow_name = deploy_config["name"].replace("_", "-")
         deployment_name = f"{args.project_name}--{args.branch_name}--{hyphen_flow_name}--{args.source_env}"
         try:
-            r = dict(asyncio.run(client.read_deployment_by_name(f"{underscore_flow_name}/{deployment_name}")))
+            r = dict(
+                asyncio.run(
+                    client.read_deployment_by_name(
+                        f"{underscore_flow_name}/{deployment_name}"
+                    )
+                )
+            )
         except Exception:
-            logger.error(f"Encountered error while fetching deployment info for `{underscore_flow_name}/{deployment_name}`")
+            logger.error(
+                f"Encountered error while fetching deployment info for `{underscore_flow_name}/{deployment_name}`"
+            )
             raise
         args.image_uri = r["job_variables"]["image"]
         args.package_version = extract_tag_value(r["tags"], "PACKAGE_VERSION")
         args.commit_hash = extract_tag_value(r["tags"], "COMMIT_HASH")
-        # TODO: note that description, work_pool_name, cron, etc. are set from current version of 
+        # TODO: note that description, work_pool_name, cron, etc. are set from current version of
         # static config rather than being inherited from source deployment
         deploy(args)
 

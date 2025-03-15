@@ -13,4 +13,5 @@ if __name__ == "__main__":
         push=False,
         work_pool_name="ecs-pool",
         image="ghcr.io/blackwhitehere/acme-prefect:main-latest",
+        job_variables={"image": "ghcr.io/blackwhitehere/acme-prefect:main-latest"},
     )
