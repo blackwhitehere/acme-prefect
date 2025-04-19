@@ -88,7 +88,6 @@ def discover_flows(package_name="acme_prefect.flows"):
 
                 # Inspect all module members
                 for name, obj in inspect.getmembers(module):
-                    # Check if it's a flow object (has __prefect_flow__ attribute set to True)
                     if isinstance(obj, Flow):
                         flow_name = obj.name.replace("-", "_")
 
@@ -200,10 +199,10 @@ def deploy(args):
         flow_function.deploy(
             name=deployment_name,
             description=deploy_config["description"],
+            # Be careful with work pool setup to avoid issue like this:
+            # https://github.com/PrefectHQ/prefect/issues/17249
             work_pool_name=deploy_config["work_pool_name"],
             cron=deploy_config["cron"],
-            # FIXME: this param is ignored by prefect when task is started on ECS
-            # https://github.com/PrefectHQ/prefect/issues/17249
             image=args.image_uri,
             job_variables={"env": {**env_vars, "DEPLOYMENT_NAME": deployment_name},
                            "image": args.image_uri},
