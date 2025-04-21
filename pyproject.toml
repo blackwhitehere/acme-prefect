@@ -23,6 +23,7 @@ dependencies = [
     "pyarrow",
     "acme_config",
     "acme_dw",
+    "acme_portal_sdk[prefect]"
 ]
 
 [[project.authors]]
