@@ -39,14 +39,14 @@ wheels = [
 
 [[package]]
 name = "acme-portal-sdk"
-version = "0.0.6"
+version = "0.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/05/1ac102463fe22a7a309265b9f0e57a5bf752b5f8e4721a0bcb13e8479ea8/acme_portal_sdk-0.0.6.tar.gz", hash = "sha256:4be101303e836f6e444eddf0a35aba04e48ef0e31fa4536ebf2c4ed8fab10075", size = 20984 }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/33/5a2541b2918343f2d00dbf3c85997100406bf84665639f95b57707c30354/acme_portal_sdk-0.0.7.tar.gz", hash = "sha256:cd3867cfb9959d030957e57a9dbde1a928cd987b7b687f71d25146a19a6de5dd", size = 21044 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/4f/05cd25dbb4a1d1d3f71f6b69a6b3dc944f15598d4a88e1c26915b68eadee/acme_portal_sdk-0.0.6-py3-none-any.whl", hash = "sha256:2f1e9d9821b4b4cd49c395a355c0fb135a93b24278316359385d4d5201aac985", size = 22987 },
+    { url = "https://files.pythonhosted.org/packages/94/3e/43157bc496d5e8a9f792a55b263ab65b3f5512973f193e067fe920a1b588/acme_portal_sdk-0.0.7-py3-none-any.whl", hash = "sha256:a122804e7fd7e262851e15dd9bff0ee26083115708585f2a49923f6d2da3c670", size = 23197 },
 ]
 
 [package.optional-dependencies]
