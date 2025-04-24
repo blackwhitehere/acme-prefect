@@ -1,14 +1,12 @@
 # acme-prefect
 
-ACME integration of Prefect for Orchestration
-
-# Problem
-
-<Explantion of the problem app/library is trying to solve>
+Sample project using [`prefect`](https://www.prefect.io/) orchestration library and [`acme-portal-sdk`](https://github.com/blackwhitehere/acme-portal-sdk) to manage deployments via [`acme-portal`](https://github.com/blackwhitehere/acme-portal) VSCode extension.
 
 # Features
 
-<Features of the application/library that solve the problem>
+* Showcases use of `prefect` library for workflow orchestration
+* Showcases how `acme-portal-sdk` can be used to provide data and actions for `acme-portal` `VSCode` extension
+
 
 # Dev environment
 
@@ -27,15 +25,11 @@ This will generate a new python virtual env under `.venv` directory. You can act
 
 If you are using VSCode, set to use this env via `Python: Select Interpreter` command.
 
-## Example usage
-
-    <example command>
-
 # Project template
 
 This project has been setup with `acme-project-create`, a python code template library.
 
-# Required setup post use
+# Required setup post template use
 
 * Enable GitHub Pages to be published via [GitHub Actions](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow) by going to `Settings-->Pages-->Source`
 * Create `release` environment for [GitHub Actions](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment#creating-an-environment) to enable uploads of the library to PyPi
