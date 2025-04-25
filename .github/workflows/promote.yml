@@ -68,7 +68,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          ENV_LABEL: ${{ inputs.target-env }}
+          ENV_LABEL: ${{ env.TARGET_ENV }}
         run: |
           ENV_VERSION_NUMBER=$(uv run ac get-version -app-name $PACKAGE_NAME -env $ENV_LABEL)
           echo "ENV_VERSION_NUMBER=$ENV_VERSION_NUMBER" >> "$GITHUB_OUTPUT"
