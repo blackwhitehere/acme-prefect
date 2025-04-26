@@ -2,13 +2,23 @@
 
 Sample project using [`prefect`](https://www.prefect.io/) orchestration library and [`acme-portal-sdk`](https://github.com/blackwhitehere/acme-portal-sdk) to manage deployments via [`acme-portal`](https://github.com/blackwhitehere/acme-portal) VSCode extension.
 
-# Features
+## Features
 
-* Showcases use of `prefect` library for workflow orchestration
-* Showcases how `acme-portal-sdk` can be used to provide data and actions for `acme-portal` `VSCode` extension
+* Shows use of `prefect` library for workflow orchestration
+* Shows how `acme-portal-sdk` can be used to provide deployment related data and actions for `acme-portal` `VSCode` extension
+* Relies on use of Prefect Cloud and ECS Push Work Pool with:
+
+    * Cluster: `prefect-cluster` or other name
+    * Launch Type: `FARGATE`
+    * Task Role ARN: set to ARN of role that controls the permissions of the task while it is running
+    * Container Name: `acme-prefect`, as we are using a custom built container to runt the flows
+    * Execution Role ARN: controls the permissions of the task when it is launching, to capture logs
+    * Cloudwatch Logs Options: e.g.
+
+            {"mode":"non-blocking","awslogs-group":"/ecs/prefect-job-default","awslogs-region":"us-east-1","max-buffer-size":"25m","awslogs-create-group":"true","awslogs-stream-prefix":"ecs"}
 
 
-# Dev environment
+## Dev environment
 
 The project comes with a python development environment.
 To generate it, after checking out the repo run:
@@ -25,11 +35,11 @@ This will generate a new python virtual env under `.venv` directory. You can act
 
 If you are using VSCode, set to use this env via `Python: Select Interpreter` command.
 
-# Project template
+## Project template
 
 This project has been setup with `acme-project-create`, a python code template library.
 
-# Required setup post template use
+## Required setup post template use
 
 * Enable GitHub Pages to be published via [GitHub Actions](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow) by going to `Settings-->Pages-->Source`
 * Create `release` environment for [GitHub Actions](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment#creating-an-environment) to enable uploads of the library to PyPi

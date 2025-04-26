@@ -33,8 +33,8 @@ email = "guner.stan@gmail.com"
 ap = "acme_prefect._main:main"
 
 [project.urls]
-homepage = "https://example.com"
-repository = "https://example.com"
+homepage = "https://blackwhitehere.github.io/acme-prefect/"
+repository = "https://github.com/blackwhitehere/acme-prefect"
 
 [project.optional-dependencies]
 dev = [
@@ -49,7 +49,7 @@ dev = [
 
 [tool.setuptools]
 package-dir = { "" = "src" }
-packages = ["acme_prefect"]
+packages = { find = { where = ["src"] } }
 # https://github.com/astral-sh/uv/issues/9513#issuecomment-2519527822
 license-files = []
 # [tool.setuptools.package-data]
