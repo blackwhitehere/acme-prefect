@@ -1,4 +1,4 @@
-from acme_portal_sdk.prefect.flow_finder import PrefectFlowFinder, PrefectFlowDetails
+from acme_portal_sdk.prefect.flow_finder import PrefectFlowFinder
 from pathlib import Path
 
 # Create an instance of PrefectFlowFinder
