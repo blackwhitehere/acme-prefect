@@ -9,7 +9,7 @@ def example_task():
 def another_example_task(a):
     print(f"I'm another example task! {a}")
 
-@flow(log_prints=True, description="An example flow", name="example-flow")
+@flow(log_prints=True, description="An example flow", name="example-flow", retries=3)
 def example_flow():
     a = example_task()
     another_example_task(a)
